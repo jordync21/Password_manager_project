@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
@@ -34,25 +35,59 @@ def generate_password():
     pyperclip.copy(password)
 
 
-
-
-
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save():
-    web = web_input.get()
+    web = web_input.get().title()
     email = e_input.get()
     password = p_input.get()
+    new_data = {web: {
+        "email": email,
+        "password": password
+    }}
 
-    if len(web) > 0 and len(email) > 0 and len(password) > 0:
-        messagebox.askokcancel(title=web,
-                               message=f"These are the details entered: \nEmail: {email} \nPassword: {password} \nIs it okay to save?")
-        with open('data.txt', 'a') as r:
-            r.write(f'{web} | {email} | {password}\n ')
+    if len(web) == 0 or len(email) == 0 or len(password) == 0:
+        messagebox.showerror(title='Oops!', message='Please do not leave any field empty')
+    else:
+        try:
+            with open('data.json', 'r') as r:
+
+                # TURNS JSON TO PYTHON DICT
+                # data = json.load(r)
+                # print(data)
+                # UPDATES JSON STRUCTURE
+                data = json.load(r)
+
+        except FileNotFoundError:
+            with open('data.json', "w") as r:
+                json.dump(new_data, r, indent=4)
+        else:
+            data.update(new_data)
+
+            with open('data.json', "w") as r:
+                json.dump(data, r, indent=4)
+
+        finally:
             web_input.delete(0, END)
             e_input.delete(0, END)
             p_input.delete(0, END)
-    elif len(web) == 0 or len(email) == 0 or len(password) == 0:
-        messagebox.showerror(title='Oops!', message='Please do not leave any field empty')
+
+
+def find_password():
+    try:
+        with open('data.json', 'r') as r:
+            data = json.load(r)
+            for (key, value) in data.items():
+                e = value['email']
+                p = value['password']
+                website = web_input.get().title()
+            if website in key:
+                messagebox.showinfo(title='Info', message=f'Email: {e} \nPassword: {p}')
+            else:
+                messagebox.showinfo(title='Info', message=f'No details for {website} exists.')
+    except FileNotFoundError:
+        messagebox.showinfo(title='Info', message='No Data File Found')
+
+
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -77,12 +112,12 @@ pw.grid(column=0, row=3)
 
 # INPUTS
 web_input = Entry()
-web_input.grid(column=1, row=1, sticky="ew")
+web_input.grid(column=1, row=1, sticky="w")
 web_input.focus()
 
 e_input = Entry()
 e_input.grid(column=1, row=2, sticky="ew")
-e_input.insert(END, "justjordyncobb@gmail.com")
+
 
 p_input = Entry()
 p_input.grid(column=1, row=3, sticky='w')
@@ -93,5 +128,8 @@ gen_pw.grid(column=1, row=3)
 
 add = Button(text='Add', width=44, command=save)
 add.grid(column=1, row=4, sticky="ew")
+
+search = Button(text='Search', padx=0, pady=0, command=find_password)
+search.grid(column=1, row=1)
 
 window.mainloop()
